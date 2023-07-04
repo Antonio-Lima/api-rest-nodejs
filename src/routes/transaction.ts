@@ -1,14 +1,29 @@
 import { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { knex } from "../database";
 import { randomUUID } from "crypto";
 
 import { createTransactionBodySchema } from "../schemas";
 
 export async function transactionRoutes(app: FastifyInstance) {
-  app.get("/", async (request, reply) => {
-    const transactions = await knex("transactions").select("*");
+  app.get("/", async () => {
+    const transactions = await knex("transactions").select();
 
-    return reply.status(200).send(transactions);
+    return { transactions };
+  });
+
+  app.get("/:id", async (request) => {
+    const getTransactionParamsSchema = z.object({
+      id: z.string().uuid(),
+    });
+    const { id } = getTransactionParamsSchema.parse(request.params);
+
+    const transactions = await knex("transactions")
+      .select()
+      .where({ id })
+      .first();
+
+    return { transactions };
   });
 
   app.post("/", async (request, reply) => {
